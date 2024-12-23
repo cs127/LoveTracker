@@ -577,14 +577,19 @@ Voice.process = function(v, currentTick)
 					v.tremoloWaveform = y
 				end
 			elseif x == 0x8 then
-				-- Set Panning (unsigned)
+				-- Set Panning
 				local y = D % 0x10
-				v.currPanning = y / 0x10
+				v.currPanning = y / 0x0F
 			elseif x == 0xA then
-				-- Stereo Control (signed) - ST3's help screen says this is "old".
+				-- Stereo Control - ST3's help screen says this is "old".
 				local y = D % 0x10
-				y = y > 7 and y - 16 or y
-				v.currPanning = (8 + y) / 0xF
+				if y == 0 or y == 2 then
+					v.currPanning = v.sbDfPanning
+				elseif y == 1 or y == 3 then
+					v.currPanning = 1 - v.sbDfPanning
+				elseif y < 8 then
+					v.currPanning = 0.5
+				end
 			elseif x == 0xC then
 				-- Note Cut
 				local y = D % 0x10
@@ -951,7 +956,7 @@ end
 
 local mtVoice = {__index = Voice}
 
-Voice.new = function(ch, pan)
+Voice.new = function(ch, pan, sbdefpan)
 	local v = setmetatable({}, mtVoice)
 
 	v.ch = ch
@@ -977,6 +982,7 @@ Voice.new = function(ch, pan)
 
 	v.currVolume       = 0.0    -- Current volume.
 	v.currPanning      = pan / 0xF -- Current panning.
+	v.sbDfPanning      = sbdefpan / 0xF -- Default panning in SoundBlaster modules.
 
 	v.currInstrument   = 0x00   -- Only for display purposes.
 
@@ -1059,7 +1065,8 @@ routine.load = function(mod)
 		if module.channel[ch].map then
 			voice[module.channel[ch].map] = Voice.new(
 				module.channel[ch].map,
-				module.channel[ch].pan)
+				module.channel[ch].pan,
+				module.channel[ch].sbdefpan)
 			-- Per-voice waveform analyzers.
 			visualizer[module.channel[ch].map] = {}
 			visualizer[module.channel[ch].map].offset = 0

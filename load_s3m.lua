@@ -311,12 +311,13 @@ local load_s3m = function(file)
 		if     v <  16 then
 			channel.type = 'Sampler'
 			channel.pan = (v<8 and 0x3 or 0xC)
+			channel.sbdefpan = channel.pan
 		elseif v <  32 then -- 30, actually.
 			channel.type = (v<=24 and 'AdLib Melody' or 'AdLib Drum')
-			channel.pan = 0x7
+			channel.pan = 7.5
 		else
 			channel.type = 'Unknown'
-			channel.pan = 0x7
+			channel.pan = 7.5
 		end
 		log("Channel 0x%02X (%s) panning 0x%01X mapped to ",
 			ch, channel.type, channel.pan)
@@ -378,7 +379,7 @@ local load_s3m = function(file)
 	if initialPanning then for ch = 0, 31 do
 		v, n = file:read(1); if n ~= 1 then return false, errorString[8] end
 		v = util.bin2num(v) % 0x10 -- High nibble is garbage.
-		structure.channel[ch].pan = structure.isStereo and v or 0x7
+		structure.channel[ch].pan = structure.isStereo and v or 7.5
 		log("Channel 0x%02X fixed panning value to 0x%01X\n",
 			ch, structure.channel[ch].pan)
 	end log("\n\n") end
